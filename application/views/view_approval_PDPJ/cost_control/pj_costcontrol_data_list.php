@@ -1,0 +1,490 @@
+<?php
+
+// validasi url untuk JobNo, alokasi, dari_tgl dan sampai tgl
+$JobNo_uri = ($this->uri->segment(3) == FALSE) ? '' : $this->uri->segment(3);
+$Alokasi_uri = ($this->uri->segment(4) == FALSE) ? '' : $this->uri->segment(4);
+$dari_tgl_uri = ($this->uri->segment(5) == FALSE) ? '' : $this->uri->segment(5);
+$sampai_tgl_uri = ($this->uri->segment(6) == FALSE) ? '' : $this->uri->segment(6);
+
+$dari_tgl =  ($dari_tgl_uri !='') ? $dari_tgl_uri : $dari_tgl;
+$sampai_tgl =  ($sampai_tgl_uri !='') ? $sampai_tgl_uri : $sampai_tgl;
+
+?>
+
+
+<style>
+    .mykonten {
+        /*font-family: Arial, Helvetica, sans-serif !important;*/
+        font-family: Geneva, Verdana, "Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", sans-serif;
+        font-size: x-small !important;
+        font-size: 10px;
+    }
+
+    .ukuran_select2 {
+        font-size: 10px !important;
+        font-family: Geneva, Verdana, "Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", sans-serif;
+        /*font-family: Arial, Helvetica, sans-serif;*/
+    }
+
+    .atur_ukuran{
+        font-size: 10px !important;
+        font-family: Geneva, Verdana, "Lucida Sans", "Lucida Grande", "Lucida Sans Unicode", sans-serif;
+    }
+
+</style>
+
+<div class="content-wrapper ">
+    <section class="content-header">
+
+        <table width="100%" border="0">
+            <tr>
+                <td style="font-size: 12px !important;" class="text-bold atur_ukuran"><?=(isset($judul)) ? $judul : '' ?></td>
+                <td style="font-size: 12px !important;" class="text-bold text-right atur_ukuran"><?=$JobNo.' - '.$JobNm.'<br />'.$Lokasi?></td>
+            </tr>
+            <tr>
+                <td>
+                    <!-- <button class="btn btn-sm bg-gray" style="background-color:#7f8c8d;" onclick="history.back()"><i class="fa fa-arrow-left"></i> Back</button> -->
+                    <a href="<?=site_url('job/sub_job/'.$JobNo)?>" class="btn btn-sm bg-gray"  ><i class="fa fa-arrow-left"></i> Back</a>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+
+
+        
+    </section>
+
+    <section class="content">
+        <?= (!empty($this->session->flashdata('message'))) ? $this->session->flashdata('message') : ''  ?>
+        <?php
+        $my_jobno = '';
+        $my_alokasi = '';
+        if (isset($_SESSION['sesi'])) {
+            $my_jobno = $this->session->flashdata('JobNo');
+            $my_alokasi = $this->session->flashdata('Alokasi');
+        } else {
+            unset($_SESSION['sesi']);
+            unset($_SESSION['JobNo']);
+            unset($_SESSION['Alokasi']);
+        }
+        ?>
+        <div class="box box-success">
+
+
+            <div class="box-body">
+
+                <div class="row">
+
+                    <div class="col-sm-4">
+
+                        <table border="0" width="100%" id="tbl_cek" data-Alokasi_uri="<?=$Alokasi_uri?>">
+                            <tr>
+                                <th style="padding-top:5px;padding-bottom:5px;" width="100px" class="atur_ukuran" >Job. No</th>
+                                <td style="padding-top:5px;padding-bottom:5px;">
+                                    <input type="text" class="form-control input-sm atur_ukuran" value="<?=$JobNo.' - '.$JobNm?>" disabled="disabled">
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th style="padding-top:5px;padding-bottom:5px;" width="100px" class="atur_ukuran">Alokasi</th>
+                                <td style="padding-top:5px;padding-bottom:5px;">
+                                    <select name="Alokasi" id="Alokasi"  class="form-control input-sm select2 atur_ukuran" required>
+                                        <option value=""></option>
+                                        <?php foreach ($data_alokasi as $alokasi) : ?>
+                                            <option value="<?= $alokasi->Alokasi ?>" <?=($alokasi->Alokasi ==  $Alokasi ) ? 'selected' : '' ?> ><?= $alokasi->Alokasi ?> - <?= $alokasi->Keterangan ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+
+                    <div class="col-sm-4">
+
+                    	<table border="0" width="100%">
+                            <tr>
+                                <th style="padding-top:5px;padding-bottom:5px;" width="100px" class="atur_ukuran">Tanggal PD</th>
+                                <td style="padding-top:5px;padding-bottom:5px;">
+                                    <!-- <label for="" class="atur_ukuran">Dari Tanggal</label> -->
+                                    <input type="date" class="form-control form-control-sm atur_ukuran" id="dari_tgl"  name="dari_tgl" value="<?= $dari_tgl ?>" required>
+                                    
+                                </td>
+                                <td style="padding-top:5px;padding-bottom:5px;text-align: center;padding-left: 5px;padding-right: 5px;">
+                                    s.d
+                                </td>
+                                <td style="padding-top:5px;padding-bottom:5px;">
+                                    <!-- <label for="" class="atur_ukuran">Sampai Tanggal</label> -->
+                                    <input type="date" class="form-control form-control-sm atur_ukuran" id="sampai_tgl" name="sampai_tgl" value="<?= $sampai_tgl ?>" required>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table border="0" width="100%">
+                            <tr>
+                                <th style="padding-top:5px;padding-bottom:5px;" width="100px" class="atur_ukuran">Tanggal PJ</th>
+                                <td style="padding-top:5px;padding-bottom:5px;">
+                                    <!-- <label for="" class="atur_ukuran">Dari Tanggal</label> -->
+                                    <input type="date" class="form-control form-control-sm atur_ukuran" id="dari_tgl_pj"  name="dari_tgl_pj" value="<?= $dari_tgl_pj ?>" required>
+                                    
+                                </td>
+                                <td style="padding-top:5px;padding-bottom:5px;text-align: center;padding-left: 5px;padding-right: 5px;">
+                                    s.d
+                                </td>
+                                <td style="padding-top:5px;padding-bottom:5px;">
+                                    <!-- <label for="" class="atur_ukuran">Sampai Tanggal</label> -->
+                                    <input type="date" class="form-control form-control-sm atur_ukuran" id="sampai_tgl_pj" name="sampai_tgl_pj" value="<?= $sampai_tgl_pj ?>" required>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+
+                    <div class="col-sm-12">
+                    	<table border="0" width="100%">
+                            <tr>
+                                <th style="padding-top:5px;padding-bottom:5px;" width="100px"></th>
+                                <td style="padding-top:5px;padding-bottom:5px;">
+                                    <input type="hidden" id="MyJobNo" value="<?= $JobNo ?>">
+                                    <button type="submit" name="btn_cari" id="btn_cari" class="btn btn-sm bg-purple"><i class="fa fa-search"></i> Lihat</button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                </div>
+
+                
+
+
+
+
+            </div>
+            <div class="overlay loadingku" style="display: none;">
+                <i class="fa fa-refresh fa-spin"></i>
+            </div>
+
+
+        </div>
+
+        <div class="tampil_table"></div>
+
+
+    </section>
+
+
+</div>
+
+
+<script src="<?=base_url('assets/select2_baru.js')?>"></script>
+
+<script>
+
+    $(document).ready(function() {
+
+        respon_web();
+
+        $('.select2').select2({
+            'placeholder' : '-- Pilih Alokasi --',
+            'width': '100%',
+            'dropdownCssClass': "ukuran_select2"
+        });
+
+        $('#btn_cari').click(function() {
+            pencarian();
+        });
+
+        $('#Alokasi').change(function(){
+            pencarian();
+        });
+
+        $('#dari_tgl,#sampai_tgl').change(function(){
+        	pencarian();
+        });
+
+        $('#dari_tgl_pj,#sampai_tgl_pj').change(function(){
+            pencarian();
+        });
+
+    });
+
+    function respon_web(){
+        if ($('#tbl_cek').attr('data-Alokasi_uri') !='' ) {
+            pencarian();
+        }
+    }
+
+    function detail_PJLapangan(LedgerNo=''){
+    if(LedgerNo == ''){
+        return false;
+    }
+
+    var ID = $('#lihat_pj_lapangan_'+LedgerNo);
+    var NoPD = ID.attr('data-NoPD');
+    var NoPJ = ID.attr('data-NoPJ');
+
+    var myurl = '/'+LedgerNo+'/epj_lap/'+NoPD+'/'+NoPJ+'/'+'0';
+
+
+    jQuery.ajax({
+      url: '<?=site_url('PDPJ/PJ_lapangan_entry_controller/detail_pj_lapangan')?>'+myurl,
+      type: 'GET',
+      dataType: 'html',
+      cache : false,
+      beforeSend : function(){
+        $('#loading_pj_lapangan_'+LedgerNo).show();
+        $('#lihat_pj_lapangan_'+LedgerNo).hide();
+    },
+    complete: function(xhr, textStatus) {
+        $('#loading_pj_lapangan_'+LedgerNo).hide();
+        $('#lihat_pj_lapangan_'+LedgerNo).show();
+    },
+    success: function(data, textStatus, xhr) {
+        if (data == 'data_tidak_ada') {
+            swal.fire('info','data tidak ditemukan','info');
+            return false;
+        }
+
+        if (data == 'belum_bayar') {
+            swal.fire('info','belum ada pembayaran untuk No '+NoPD+' ','info');
+            return false;
+        }
+
+        window.location.href="<?=site_url('PDPJ/PJ_lapangan_entry_controller/detail_pj_lapangan')?>"+myurl;
+    },
+    error: function(xhr, textStatus, errorThrown) {
+        swal.fire('error','terjadi kesalahan','error');
+        return false;
+    }
+});
+    
+
+    
+
+}
+
+
+    function pencarian() {
+
+        var JobNo = $('#MyJobNo').val();
+        var Alokasi = $('#Alokasi :selected').val();
+        var dari_tgl = $('#dari_tgl').val();
+        var sampai_tgl = $('#sampai_tgl').val();
+
+        var dari_tgl_pj = $('#dari_tgl_pj').val();
+        var sampai_tgl_pj = $('#sampai_tgl_pj').val();
+
+        if (Alokasi == '') {
+            $.toast({
+                text: 'Alokasi masih kosong',
+                position: 'bottom-right',
+                stack: false,
+                hideAfter: 1000,
+                icon: 'info',
+            });
+            return false;
+        }
+
+        if (dari_tgl > sampai_tgl  ) {
+            $.toast({
+                text: 'Tanggal tidak sesuai ',
+                position: 'top-right',
+                stack: false,
+                hideAfter: 3000,
+                icon: 'info',
+            });
+
+            return false;
+        }
+
+        jQuery.ajax({
+            url: "<?=site_url('Approval_PDPJ/Approval_PJ_CostControl/tampilkan_table_data_approval_pj_costcontrol')?>",
+            type: 'POST',
+            dataType: 'HTML',
+            data: {
+                'JobNo': JobNo,
+                'Alokasi': Alokasi,
+                'dari_tgl': dari_tgl,
+                'sampai_tgl': sampai_tgl,
+
+                'dari_tgl_pj': dari_tgl_pj,
+                'sampai_tgl_pj': sampai_tgl_pj,
+            },
+            beforeSend: function() {
+                $('.loadingku').show();
+                $('.tampil_table').html('');
+            },
+            complete: function(xhr, textStatus) {
+                $('.loadingku').hide();
+            },
+            success: function(data, textStatus, xhr) {
+                $('.tampil_table').html(data);
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                $.toast({
+                    text: 'Terjadi Kesalahan',
+                    position: 'bottom-right',
+                    stack: false,
+                    hideAfter: 3000,
+                    icon: 'error',
+
+                });
+                return false;
+            }
+        });
+
+
+    }
+
+    function aksi_approve_pj_costcontrol(LedgerNo='', flag_status_approve, NoPD=''){
+        if (LedgerNo == '') {
+            return false;
+        }
+
+        Swal.fire({
+            title: 'Anda Yakin?',
+            text: "perubahan data tidak dapat dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Lakukan!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.value) {
+
+                $.ajax({
+                    type: "post",
+                    url: "<?=site_url('Approval_PDPJ/Approval_PJ_CostControl/aksi_approve_pj_costcontrol')?>",
+                    data: {
+                        'LedgerNo': LedgerNo,
+                        'flag_status_approve': flag_status_approve,
+                        'NoPD' : NoPD,
+                    },
+                    dataType: "JSON",
+                    beforeSend: function() {
+                        $('.loading_table').show();
+                    },
+                    complete : function(){
+                        $('.loading_table').hide();
+                        pencarian();
+                    },
+                    success: function(data) {
+                        // alert(data.ini);
+                        // return false;
+
+                        if (data.status == 'data_tidak_ada') {
+                            $.toast({
+                                text: data.pesan,
+                                position: 'bottom-right',
+                                stack: false,
+                                hideAfter: 3000,
+                                icon: 'error',
+
+                            });
+                            return false;
+                        }
+
+                        if (data.status == 'belum_bayar') {
+                            $.toast({
+                                text: data.pesan,
+                                position: 'bottom-right',
+                                stack: false,
+                                hideAfter: 3000,
+                                icon: 'error',
+
+                            });
+                            return false;
+                        }
+
+                        if (data.status == 'pj_masih_kosong') {
+                            $.toast({
+                                text: data.pesan,
+                                position: 'bottom-right',
+                                stack: false,
+                                hideAfter: 3000,
+                                icon: 'error',
+
+                            });
+                            return false;
+                        }
+
+                        if (data.status == 'sudah_approvedKT') {
+                            $.toast({
+                                text: data.pesan,
+                                position: 'bottom-right',
+                                stack: false,
+                                hideAfter: 3000,
+                                icon: 'error',
+
+                            });
+                            return false;
+                        }
+
+                        if (data.status == 'sudah_approvedKK') {
+                            $.toast({
+                                text: data.pesan,
+                                position: 'bottom-right',
+                                stack: false,
+                                hideAfter: 3000,
+                                icon: 'error',
+
+                            });
+                            return false;
+                        }
+
+                        if (data.status == 'berhasil') {
+                            $.toast({
+                                text: data.pesan,
+                                position: 'bottom-right',
+                                stack: false,
+                                hideAfter: 3000,
+                                icon: 'success',
+
+                            });
+                            return false;
+                        }
+
+                        if (data.status == 'gagal') {
+                            $.toast({
+                                text: data.pesan,
+                                position: 'bottom-right',
+                                stack: false,
+                                hideAfter: 3000,
+                                icon: 'success',
+
+                            });
+                            return false;
+                        }
+
+                        
+
+
+                        return false;
+
+
+                    },
+                    error: function() {
+                        $.toast({
+                            text: data.pesan,
+                            position: 'bottom-right',
+                            stack: false,
+                            hideAfter: 3000,
+                            icon: 'success',
+
+                        });
+                        return false;
+                    }
+                });
+
+
+}
+})
+
+}
+
+
+
+
+
+</script>

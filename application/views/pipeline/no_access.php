@@ -1,0 +1,1 @@
+<div class="content-wrapper"><section class="content"><div class="box box-info"><div class="box-body"><h2>Akses belum diatur</h2><p>Akun Anda belum memiliki akses menu. Hubungi administrator untuk mengatur menu dan area kerja Anda.</p><a class="btn btn-default" href="<?= site_url('Auth/logout') ?>">Keluar</a></div></div></section></div>

@@ -1,0 +1,25 @@
+body{
+	border: 1px solid;
+}
+.huruf_14{
+	font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+	font-size: 14px;
+}
+.huruf_12{
+	font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+	font-size: 12px;
+}
+.huruf_10{
+	font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+	font-size: 10px;
+}
+
+.huruf_8{
+	font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+	font-size: 8px;
+}
+
+.jarak{
+	margin-top: 5px;
+	margin-bottom: 5px;
+}

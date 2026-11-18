@@ -1,0 +1,8 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+class Pipeline_bunker_number {
+ public function code($value,$max=20,$optional=false){if(!is_string($value))throw new InvalidArgumentException('Kode surat tidak valid.');$value=strtoupper(trim($value));if($value===''&&$optional)return '';if(strlen($value)>$max||!preg_match('/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/D',$value))throw new InvalidArgumentException('Kode wajib huruf/angka, boleh memakai strip, maksimal '.$max.' karakter.');return $value;}
+ public function known_vessel($name){$name=strtoupper(preg_replace('/[\s.]+/u','',(string)$name));return in_array($name,array('PORTLINK2','PORTLINKII','KMPPORTLINK2','KMPPORTLINKII'),true)?'PL2':'';}
+ public function period($date){if(!is_string($date))throw new InvalidArgumentException('Tanggal surat tidak valid.');$d=DateTimeImmutable::createFromFormat('!Y-m-d',$date);if(!$d||$d->format('Y-m-d')!==$date||(int)$d->format('Y')<1)throw new InvalidArgumentException('Tanggal surat tidak valid.');$romans=array(1=>'I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII');return array('year'=>(int)$d->format('Y'),'month'=>(int)$d->format('n'),'roman'=>$romans[(int)$d->format('n')],'start'=>$d->format('Y-m-01'),'next'=>$d->modify('first day of next month')->format('Y-m-d'));}
+ public function format($sequence,$vessel,$issuer,$date){if(!is_int($sequence)||$sequence<1||$sequence>2147483646)throw new InvalidArgumentException('Urutan surat tidak valid.');$p=$this->period($date);return str_pad((string)$sequence,3,'0',STR_PAD_LEFT).'/BBM/'.$this->code($vessel,20).'/'.$this->code($issuer,30).'/'.$p['roman'].'/'.$p['year'];}
+}

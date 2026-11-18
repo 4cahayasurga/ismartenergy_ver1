@@ -1,0 +1,30 @@
+# Environment & konfigurasi lokal
+.env
+.env.*
+!.env.example
+
+# Konfigurasi database lokal CodeIgniter 3
+#/application/config/database.php
+
+# Logs
+/application/logs/*
+!/application/logs/index.html
+
+# Cache
+/application/cache/*
+!/application/cache/index.html
+
+# Backup database
+*.bak
+*.sql
+*.log
+
+# Dependencies
+node_modules/
+vendor/
+
+# File sementara
+*.tmp
+*.swp
+Thumbs.db
+.DS_Store

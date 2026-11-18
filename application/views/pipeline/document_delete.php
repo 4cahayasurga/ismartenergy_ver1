@@ -1,0 +1,1 @@
+<form method="post" action="<?= site_url('Pipeline_documents/delete/'.$action_type.'/'.$action_id) ?>" style="display:inline-block;margin-left:8px" onsubmit="return confirm('Hapus dokumen ini? Dokumen yang sudah dipakai atau dibayar akan ditolak.');"><?php $this->load->view('pipeline/billing_token'); ?><button class="btn btn-danger btn-xs" type="submit">Hapus</button></form>
