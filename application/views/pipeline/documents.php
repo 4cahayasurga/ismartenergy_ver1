@@ -31,7 +31,7 @@
 
 <div class="box box-primary"><div class="box-body"><p><strong><?= html_escape($delivery['VesselName']) ?></strong> &middot; <?= html_escape($delivery['DeliveryDate']) ?> &middot; <?= number_format($delivery['Quantity'],3,',','.') ?> liter</p>
 
-<div class="alert alert-<?= $errors?'warning':'success' ?>"><?= $errors?html_escape(implode(' • ',$errors)):'SPP sudah diperiksa. Dokumen DO / LO tambahan dapat dilampirkan bila tersedia.' ?></div>
+<div class="alert alert-<?= $errors?'warning':'success' ?>"><?= $errors?html_escape(implode(' • ',$errors)):'SPP sudah diperiksa. Dokumen Surat Pengantar Pengiriman tambahan dapat dilampirkan bila tersedia.' ?></div>
 
 <p>Data diambil dari SPP terikat saat memilih jenis surat. Pilih file untuk membaca OCR dan mengisi textbox otomatis, lalu koreksi hasilnya sebelum upload. File hasil scan harus diperiksa melalui <strong>View / Periksa</strong>; upload saja belum dianggap tervalidasi. Untuk file yang berisi beberapa surat, jelaskan halaman/bagian yang digunakan pada catatan.</p>
 
@@ -43,9 +43,9 @@
 
 <?php if(!$locked && $this->pipeline_access->allowed('delivery')): ?>
 
-<div class="box box-success"><div class="box-header"><h3 class="box-title">Dokumen DO / LO dan Lampiran SPP</h3></div><div class="box-body">
+<div class="box box-success"><div class="box-header"><h3 class="box-title">Dokumen Surat Pengantar Pengiriman dan Lampiran SPP</h3></div><div class="box-body">
 
-<?php if($this->pipeline_access->allowed('spp_ocr')): ?><p><a class="btn btn-info" href="<?= site_url('Pipeline_spp').'?'.html_escape(http_build_query(array('branch'=>$delivery['SpbbID'],'do'=>$delivery['DeliveryID']))) ?>"><i class="fa fa-camera"></i> Upload / Foto SPP — Baca Otomatis</a></p><?php endif; ?>
+<?php if($this->pipeline_access->allowed('spp_ocr')): ?><p><a class="btn btn-info" href="<?= site_url('Pipeline_spp').'?'.html_escape(http_build_query(array('branch'=>$delivery['SpbbID'],'do'=>$delivery['DeliveryID']))) ?>"><i class="fa fa-camera"></i> Upload / Foto Surat Pengantar Pengiriman — Baca Otomatis</a></p><?php endif; ?>
 
 <?php if ($this->pipeline_access->allowed('spp_ocr')):
  $confirmed=get_instance()->db->select('CaptureID,LONumber,OriginalName')->where('SpbbID',(int)$delivery['SpbbID'])
@@ -54,9 +54,9 @@
  if ($confirmed): ?>
 <form method="post" action="<?= site_url('Pipeline_billing/documents/'.$delivery['DeliveryID']) ?>">
 <?php $this->load->view('pipeline/billing_token'); ?>
-<div class="form-group"><label for="do-spp-archive">SPP dari arsip cabang</label><select id="do-spp-archive" name="CaptureID" class="form-control" required><option value="">Pilih arsip SPP</option>
+<div class="form-group"><label for="do-spp-archive">Surat Pengantar Pengiriman dari arsip cabang</label><select id="do-spp-archive" name="CaptureID" class="form-control" required><option value="">Pilih arsip Surat Pengantar Pengiriman</option>
 <?php foreach ($confirmed as $item): ?><option value="<?= (int)$item['CaptureID'] ?>"><?= html_escape($item['LONumber'].' / '.$item['OriginalName']) ?></option><?php endforeach; ?>
-</select></div><button class="btn btn-default" name="action" value="attach_spp">Lampirkan SPP Tersimpan</button>
+</select></div><button class="btn btn-default" name="action" value="attach_spp">Lampirkan Surat Pengantar Pengiriman Tersimpan</button>
 </form><hr>
 <?php endif; endif; ?>
 <form class="pipeline-document-upload" data-ocr-url="<?= site_url('Pipeline_billing/document_ocr/'.$delivery['DeliveryID']) ?>" method="post" action="<?= site_url('Pipeline_billing/documents/'.$delivery['DeliveryID']) ?>" enctype="multipart/form-data"><?php $this->load->view('pipeline/billing_token'); ?><div class="row">
@@ -81,7 +81,7 @@
 <?php if(!$locked && $this->pipeline_access->allowed('delivery')): ?>
 <script>(function(){var scripts=document.querySelectorAll('form.pipeline-document-upload');var form=scripts[scripts.length-1];if(!form||form.dataset.autoFillReady)return;form.dataset.autoFillReady='1';var delivery=<?= json_encode(array_intersect_key($delivery,array_flip(array('DONumber','VesselName','Quantity','DeliveryDate'))),JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,spp=null,docs=<?= json_encode(array_values(array_filter($documents,function($d){return $d['DocumentType']==='SPP';})),JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;docs.sort(function(a,b){return Number(b.DocumentID)-Number(a.DocumentID);});if(docs.length)spp=docs[0];var status=form.querySelector('.document-ocr-status'),file=form.elements.DocumentFile,read=form.querySelector('.document-read'),sequence=0,busy=false;
 function set(fields){Object.keys(fields).forEach(function(k){var input=form.elements[k];if(input){input.value=fields[k]==null?'':fields[k];if(input.tagName==='SELECT'&&window.jQuery)window.jQuery(input).trigger('change.select2');}});}
-function source(){var t=form.elements.DocumentType.value;set({ReferenceNo:t==='DO'?delivery.DONumber:(t==='LO'?(spp?spp.LoadingReference:''):(spp?spp.ReferenceNo:'')),LoadingReference:spp?spp.LoadingReference:'',VesselName:delivery.VesselName,Volume:Number(spp?spp.VolumeLiters:delivery.Quantity),VolumeUnit:'L',Density:spp&&spp.Density?Number(spp.Density):'',DocumentDate:String(spp?spp.DocumentDate:delivery.DeliveryDate).slice(0,10)});status.textContent=spp?'Data diisi dari SPP yang sudah terikat ke DO. Untuk SPP yang sama, cukup gunakan View / Periksa pada daftar di atas; tidak perlu upload ulang.':'Belum ada SPP terikat. Data dasar diisi dari DO; nomor SPP/LO menunggu hasil OCR atau input manual.';}
+function source(){var t=form.elements.DocumentType.value;set({ReferenceNo:t==='DO'?delivery.DONumber:(t==='LO'?(spp?spp.LoadingReference:''):(spp?spp.ReferenceNo:'')),LoadingReference:spp?spp.LoadingReference:'',VesselName:delivery.VesselName,Volume:Number(spp?spp.VolumeLiters:delivery.Quantity),VolumeUnit:'L',Density:spp&&spp.Density?Number(spp.Density):'',DocumentDate:String(spp?spp.DocumentDate:delivery.DeliveryDate).slice(0,10)});status.textContent=spp?'Data diisi dari SPP yang sudah terikat ke DO. Untuk SPP yang sama, cukup gunakan View / Periksa pada daftar di atas; tidak perlu upload ulang.':'Belum ada SPP terikat. Data dasar diisi dari DO; nomor Surat Pengantar Pengiriman menunggu hasil OCR atau input manual.';}
 async function recognize(){if(!file.files.length){status.textContent='Pilih file dahulu.';return;}var serial=++sequence,data=new FormData();data.append('pipeline_token',form.elements.pipeline_token.value);data.append('DocumentType',form.elements.DocumentType.value);data.append('DocumentFile',file.files[0]);busy=true;read.disabled=true;status.textContent='Sedang membaca file dan mengisi textbox…';try{var response=await fetch(form.dataset.ocrUrl,{method:'POST',credentials:'same-origin',body:data});if(response.status===403||response.status===404)throw new Error('Akses ditolak atau form kedaluwarsa; muat ulang halaman.');var result=await response.json();if(serial!==sequence)return;if(!result.ok)throw new Error(result.message||'OCR belum berhasil.');form.elements.DocumentType.value=result.type;if(window.jQuery)window.jQuery(form.elements.DocumentType).trigger('change.select2');set(result.fields);status.textContent='Auto Fill selesai. '+result.warnings.join(' ');}catch(error){if(serial===sequence)status.textContent='OCR belum berhasil: '+error.message+' File masih dipilih; periksa dan lengkapi textbox secara manual.';}finally{if(serial===sequence){busy=false;read.disabled=false;}}}
 form.elements.DocumentType.addEventListener('change',function(){sequence++;busy=false;read.disabled=false;source();if(file.files.length)recognize();});file.addEventListener('change',function(){sequence++;busy=false;read.disabled=false;if(file.files.length)recognize();else source();});read.addEventListener('click',recognize);form.addEventListener('submit',function(e){if(busy){e.preventDefault();status.textContent='Tunggu pembacaan OCR selesai sebelum upload.';}});source();})();</script>
 <?php endif; ?>

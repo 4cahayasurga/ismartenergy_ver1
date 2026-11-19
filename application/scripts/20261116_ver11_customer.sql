@@ -30,4 +30,12 @@ IF OBJECT_ID('dbo.PipelineCustomerPasswordInvite','U') IS NULL
     CREATE TABLE dbo.PipelineCustomerPasswordInvite (
         UserID varchar(100) PRIMARY KEY, TokenHash char(64) NOT NULL UNIQUE, ExpiresAt datetime2 NOT NULL
     );
+IF OBJECT_ID('dbo.PipelineFlowSource','U') IS NULL
+CREATE TABLE dbo.PipelineFlowSource (
+ RequestID int NOT NULL REFERENCES dbo.PipelineFlowRequest(RequestID),
+ CaptureID int NOT NULL UNIQUE REFERENCES dbo.PipelineSppCapture(CaptureID),
+ SourceKey nvarchar(200) NOT NULL, VerifiedBy varchar(100) NOT NULL,
+ VerifiedAt datetime2 NOT NULL DEFAULT SYSDATETIME(),
+ PRIMARY KEY(RequestID,CaptureID)
+);
 COMMIT TRANSACTION;

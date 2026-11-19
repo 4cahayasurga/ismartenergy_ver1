@@ -132,7 +132,7 @@ class Pipanisasi extends CI_Controller
             }
         }
         list($start, $end) = $this->period();
-        $this->render('pipeline/delivery', array('deliveryError'=>$deliveryError,'do_conflicts'=>$this->spp_delivery->conflicts($this->input->post('DONumber'),$this->input->post('SourceCaptureID')?:$this->input->get('spp')),'spp_sources'=>$this->spp_delivery->candidates(),'selected_spp'=>(int)($this->input->post('SourceCaptureID')?:$this->input->get('spp')),'master_vessels'=>$this->masterdata->vessels(),'master_companies'=>$this->masterdata->companies(),'judul' => 'Input DO Pipanisasi', 'orders' => $this->Pipeline_model->orders(),
+        $this->render('pipeline/delivery', array('deliveryError'=>$deliveryError,'do_conflicts'=>$this->spp_delivery->conflicts($this->input->post('DONumber'),$this->input->post('SourceCaptureID')?:$this->input->get('spp')),'spp_sources'=>$this->spp_delivery->candidates(),'selected_spp'=>(int)($this->input->post('SourceCaptureID')?:$this->input->get('spp')),'master_vessels'=>$this->masterdata->vessels(),'master_companies'=>$this->masterdata->companies(),'judul' => 'Input Surat Pengantar Pengiriman', 'orders' => $this->Pipeline_model->orders(),
             'branches'=>$this->billing->branches(),'billing'=>$this->billing,'pipeline_token'=>$this->session->userdata('pipeline_form_token'),
             'start'=>$start, 'end'=>$end, 'deliveries'=>$this->Pipeline_model->deliveries($start,$end)));
     }

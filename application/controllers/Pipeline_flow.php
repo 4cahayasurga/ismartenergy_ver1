@@ -138,7 +138,7 @@ class Pipeline_flow extends CI_Controller
         $staff = $this->flow->staff();
         $editor = $this->flow->is_customer_editor($row) && in_array($row['Status'],array('DRAFT','REVISION'),true);
         $captures = $staff && $this->flow->awaiting_source($row)?$this->flow->captures($row):array();
-        $verifiedCapture=$staff && $row['CaptureID']?$this->flow->operations->spp->capture($row['CaptureID']):null;
+        $verifiedCapture=$staff && $row['CaptureID']?$this->flow->aggregate_source($row):null;
         $prefilled = array_column($captures,null,'CaptureID')[(int)$this->input->get('spp')]??null;
         $sourceMismatches=$prefilled?$this->flow->source_mismatches($row,$prefilled):array();
         $sourceConflicts=$prefilled?$this->flow->source_conflicts($prefilled):array();

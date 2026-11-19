@@ -35,6 +35,7 @@ try {
         'PipelineCustomerVesselAccess'=>array('UserID','VesselID'),
         'PipelineCustomerPasswordInvite'=>array('UserID','TokenHash','ExpiresAt'),
         'PipelineFlowRequest'=>array('Status','Letter','Requirements','Signers','CaptureID','DeliveryID','TotalizerStart','TotalizerEnd'),
+        'PipelineFlowSource'=>array('RequestID','CaptureID','SourceKey','VerifiedBy','VerifiedAt'),
         'PipelineFlowApproval'=>array('Slot','DocumentHash','Token'),
         'PipelineShippingProfile'=>array('IssuerCode','BankAccountsJson'),
         'PipelineSppCapture'=>array('ProposedRequestID','DeliveryID','DocumentID'),

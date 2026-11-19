@@ -24,6 +24,14 @@ class Pipeline_spp_model extends CI_Model
         if (!$this->db->table_exists('PipelineFlowRequest')) return null;
         $lo = mb_strtoupper(trim((string)($capture['LONumber']??'')));
         $shipment = mb_strtoupper(trim((string)($capture['ShipmentNo']??'')));
+        if ($this->db->table_exists('PipelineFlowSource')) {
+            $linked=$this->db->query("SELECT TOP 1 R.RequestID FROM PipelineFlowSource F
+                JOIN PipelineFlowRequest R ON R.RequestID=F.RequestID JOIN PipelineSppCapture S ON S.CaptureID=F.CaptureID
+                WHERE R.SpbbID=? AND (S.CaptureID=? OR (?<>'' AND UPPER(LTRIM(RTRIM(S.LONumber)))=?)
+                OR (?<>'' AND UPPER(LTRIM(RTRIM(S.ShipmentNo)))=?))",
+                array($capture['SpbbID'],(int)($capture['CaptureID']??0),$lo,$lo,$shipment,$shipment))->row_array();
+            if ($linked) return $linked;
+        }
         return $this->db->query("SELECT TOP 1 R.RequestID FROM PipelineFlowRequest R
             JOIN PipelineSppCapture S ON S.CaptureID=R.CaptureID
             WHERE R.SpbbID=? AND (S.CaptureID=? OR
@@ -47,10 +55,14 @@ class Pipeline_spp_model extends CI_Model
             $lock=$this->db->query("DECLARE @r int;EXEC @r=sp_getapplock @Resource='pipeline-operation-workflow',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;SELECT @r Result");
             if(!$lock||(int)$lock->row()->Result<0)throw new RuntimeException('Dokumen sedang diproses. Coba kembali.');
             $request=(int)($data['ProposedRequestID']??0);
-            if ($request && !$this->db->where('RequestID',$request)->where('SpbbID',$data['SpbbID'])
-                ->where('CaptureID',null)->where_in('Status',array('SUBMITTED','WAIT_TRANSPORT','TRANSPORT_CONFIRMED'))
-                ->count_all_results('PipelineFlowRequest')) {
-                throw new RuntimeException('Pesanan sudah berubah. Pilih kembali permohonan yang masih tersedia.');
+            if ($request) {
+                $this->load->model('Pipeline_flow_model','upload_flow');
+                $requestRow=$this->upload_flow->find($request);
+                if (!$requestRow || !$this->upload_flow->staff() || (int)$requestRow['SpbbID']!==(int)$data['SpbbID']
+                    || !in_array($requestRow['Status'],array('SUBMITTED','WAIT_TRANSPORT','TRANSPORT_CONFIRMED'),true)
+                    || bccomp($this->upload_flow->source_remaining($requestRow),'0',3)<=0) {
+                    throw new RuntimeException('Volume permohonan sudah penuh atau pesanan sudah diproses.');
+                }
             }
             $existing=$this->db->where('SpbbID',$data['SpbbID'])->where('FileHash',$data['FileHash'])->order_by('CaptureID','DESC')->get('PipelineSppCapture')->row_array();
             if($existing){

@@ -370,7 +370,7 @@ class Pipeline_billing_model extends CI_Model
             $workflow=$this->db->query("DECLARE @r int;EXEC @r=sp_getapplock @Resource='pipeline-operation-workflow',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000;SELECT @r r");if(!$workflow||(int)$workflow->row()->r<0)throw new RuntimeException('Dokumen sedang diproses.');$this->lock($input['SpbbID'].'/'.$input['CustomerID']);
             $quote=$this->quote($input);
             if (!hash_equals($expected,hash('sha256',json_encode(array($input,$quote))))) throw new RuntimeException('Data berubah saat penerbitan. Hitung / Preview kembali.');
-            if ($quote['GrandTotal']<=0) throw new RuntimeException('Tidak ada nilai tagihan. DO / SPP harus belum ditagihkan atau isi jasa lainnya.');
+            if ($quote['GrandTotal']<=0) throw new RuntimeException('Tidak ada nilai tagihan. Surat Pengantar Pengiriman harus belum ditagihkan atau isi jasa lainnya.');
             $header=$input; unset($header['quantities'],$header['SelectedDeliveryIDs'],$header['SelectedCaptureIDs'],$header['BillingSource']);
             foreach (array('TotalLiters','TotalTons','Subtotal','Tax','GrandTotal') as $key) $header[$key]=$quote[$key];
             $header['CreatedBy']=$this->user; $header['InvoiceType']='INVOICE';

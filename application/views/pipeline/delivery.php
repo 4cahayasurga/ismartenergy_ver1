@@ -2,9 +2,9 @@
 
     <section class="content-header">
 
-        <h1>Input DO Pipanisasi</h1>
+        <h1>Input Surat Pengantar Pengiriman</h1>
 
-        <?php if($this->pipeline_access->allowed('spp_ocr')): ?><p style="margin-top:12px"><a class="btn btn-primary" href="<?= site_url('Pipeline_spp') ?>"><i class="fa fa-camera"></i> Upload / Foto SPP — Baca Otomatis</a></p><?php endif; ?>
+        <?php if($this->pipeline_access->allowed('spp_ocr')): ?><p style="margin-top:12px"><a class="btn btn-primary" href="<?= site_url('Pipeline_spp') ?>"><i class="fa fa-camera"></i> Upload / Foto Surat Pengantar Pengiriman — Baca Otomatis</a></p><?php endif; ?>
 
     </section>
 
@@ -20,7 +20,7 @@
         <?php if(!empty($deliveryError)): ?><div class="alert alert-danger"><?= html_escape($deliveryError) ?></div><?php endif; ?>
         <?php if(!empty($do_conflicts)): ?>
         <div class="box box-warning"><div class="box-header"><h3 class="box-title">DO dan lampiran yang sudah tersimpan</h3></div>
-        <div class="box-body table-responsive"><table class="table table-bordered"><thead><tr><th>Nomor DO</th><th>Tanggal</th><th>Kapal</th><th>File SPP</th><th>Aksi</th></tr></thead><tbody>
+        <div class="box-body table-responsive"><table class="table table-bordered"><thead><tr><th>Nomor DO</th><th>Tanggal</th><th>Kapal</th><th>File Surat Pengantar Pengiriman</th><th>Aksi</th></tr></thead><tbody>
         <?php foreach($do_conflicts as $conflict): ?><tr>
         <td><?= html_escape($conflict['DONumber']) ?></td><td><?= html_escape($conflict['DeliveryDate']) ?></td><td><?= html_escape($conflict['VesselName']) ?></td>
         <td><?php if($conflict['DocumentID']): ?><a href="<?= site_url('Pipeline_billing/document/'.(int)$conflict['DocumentID']) ?>"><?= html_escape($conflict['OriginalName'].' / '.$conflict['ReferenceNo']) ?></a><?php else: ?>Belum ada lampiran SPP<?php endif; ?></td>
@@ -34,7 +34,7 @@
 
             <div class="box-body">
 
-                <div class="alert alert-info">Simpan data DO, lalu upload DO / SPP / LO dan isi totalizer akhir langsung di tabel DO Tersimpan. Pesanan bersifat opsional. Print DO aktif setelah totalizer akhir diisi.</div>
+                <div class="alert alert-info">Simpan data DO, lalu upload Surat Pengantar Pengiriman dan isi totalizer akhir langsung di tabel DO Tersimpan. Pesanan bersifat opsional. Print DO aktif setelah totalizer akhir diisi.</div>
 
                 <?= form_open('Pipanisasi/delivery',array('enctype'=>'multipart/form-data')) ?>
 
@@ -155,7 +155,7 @@
         <?php if($linkedProgress): ?><p><a href="<?= site_url('Pipeline_flow/detail/'.(int)$linkedProgress['RequestID']) ?>"><?= html_escape($this->flow->statuses()[$linkedProgress['Status']]) ?></a></p><?php elseif($this->pipeline_finance->printable_do($row)): ?><p>Pengisian selesai</p><?php else: ?><p>Pengisian belum selesai</p><?php endif; ?>
         <?php if($row['InvoiceID']): ?><?= html_escape($row['InvoiceNumber']) ?><br><span class="label label-<?= $row['GrandTotal']>$row['Paid']?'warning':'success' ?>"><?= $row['GrandTotal']>$row['Paid']?'Outstanding':'Lunas' ?></span><br>Sisa invoice: Rp <?= number_format(max(0,$row['GrandTotal']-$row['Paid']),2,',','.') ?><?php else: ?><span class="label label-info">Belum Create Invoice</span><?php endif; ?></td><td>
 
-        <a class="btn btn-primary btn-sm" href="<?= site_url('Pipanisasi/delivery').'?'.html_escape(http_build_query(array('start'=>$start,'end'=>$end,'do'=>$row['DeliveryID']))) ?>#do-<?= (int)$row['DeliveryID'] ?>">Upload DO / SPP / LO</a>
+        <a class="btn btn-primary btn-sm" href="<?= site_url('Pipanisasi/delivery').'?'.html_escape(http_build_query(array('start'=>$start,'end'=>$end,'do'=>$row['DeliveryID']))) ?>#do-<?= (int)$row['DeliveryID'] ?>">Upload Surat Pengantar Pengiriman</a>
 
         <?php if($this->pipeline_access->allowed('spp_ocr') && !$row['InvoiceID']): ?><a class="btn btn-info btn-sm" href="<?= site_url('Pipeline_spp').'?'.html_escape(http_build_query(array('branch'=>$row['SpbbID'],'do'=>$row['DeliveryID']))) ?>">Foto SPP / OCR</a><?php endif; ?>
 

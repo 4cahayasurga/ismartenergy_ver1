@@ -89,7 +89,7 @@ class Pipeline_billing extends CI_Controller
                     return;
                 }
                 $type=$this->text('DocumentType',10);
-                if ($type==='SPP') throw new RuntimeException('Gunakan arsip Upload / Foto SPP untuk melampirkan SPP ke DO.');
+                if ($type==='SPP') throw new RuntimeException('Gunakan arsip Upload / Foto Surat Pengantar Pengiriman untuk melampirkan SPP ke DO.');
                 if (!in_array($type,array('DO','LO'),true)) throw new InvalidArgumentException('Jenis dokumen tidak valid.');
                 $volume=$this->pipeline_finance->number($this->text('Volume',30),1000000000);
                 $unit=$this->text('VolumeUnit',5); if (!in_array($unit,array('L','KL'),true)) throw new InvalidArgumentException('Satuan volume tidak valid.');
@@ -191,7 +191,7 @@ class Pipeline_billing extends CI_Controller
             $data['BillingSource']='SPP'; $selected=$this->billing->invoice_spp_company((int)$match[1],$branch);
         } elseif (ctype_digit($choice) && (int)$choice>0) {
             $data['BillingSource']='DO'; $selected=$this->billing->invoice_company((int)$choice,$branch);
-        } else throw new RuntimeException('Pilih perusahaan dari DO / SPP yang tersedia.');
+        } else throw new RuntimeException('Pilih perusahaan dari Surat Pengantar Pengiriman yang tersedia.');
         $data['CustomerID']=$selected['CustomerID']; $data['CustomerName']=$selected['BillingCompany'];
         $branchRow=null;
         foreach($this->billing->branches() as $row) if ((int)$row['SpbbID']===$branch) $branchRow=$row;
@@ -240,7 +240,7 @@ class Pipeline_billing extends CI_Controller
                 if ($input['BillingSource']==='SPP') $available_spps=$this->billing->candidate_spps($input['CustomerName'],$input['SpbbID'],$input['PeriodStart'],$input['PeriodEnd']);
                 else $available_deliveries=$this->billing->candidate_deliveries($input['CustomerID'],$input['SpbbID'],$input['PeriodStart'],$input['PeriodEnd'],$input['CustomerName']);
                 $quote=$this->billing->quote($input);
-                if (!$quote['deliveries'] && !$quote['spp_links']) throw new RuntimeException('Tidak ada DO / SPP yang belum ditagihkan untuk perusahaan dan periode ini.');
+                if (!$quote['deliveries'] && !$quote['spp_links']) throw new RuntimeException('Tidak ada Surat Pengantar Pengiriman yang belum ditagihkan untuk perusahaan dan periode ini.');
                 if ($this->input->post('action')==='issue') {
                     $preview=$this->session->userdata('pipeline_invoice_preview');
                     $hash=hash('sha256',json_encode(array($input,$quote)));

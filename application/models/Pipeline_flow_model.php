@@ -23,7 +23,7 @@ class Pipeline_flow_model extends CI_Model
     public function statuses()
     {
         return array('DRAFT'=>'Draf','SUBMITTED'=>'Menunggu Verfikasi Pihak Bunkering','REVISION'=>'Perlu Perbaikan',
-            'WAIT_TRANSPORT'=>'Menunggu Verifikasi SPP / DO','TRANSPORT_CONFIRMED'=>'Siap Pengisian','FILLING'=>'Sedang Pengisian','FILLED'=>'Pengisian Selesai - Siap Buat BA',
+            'WAIT_TRANSPORT'=>'Menunggu Verifikasi Surat Pengantar Pengiriman','TRANSPORT_CONFIRMED'=>'Siap Pengisian','FILLING'=>'Sedang Pengisian','FILLED'=>'Pengisian Selesai - Siap Buat BA',
             'BA_APPROVAL'=>'Menunggu Approval BA Pengisian','BASTB_APPROVAL'=>'Menunggu Approval BASTB','COMPLETED'=>'BASTB Terbit');
     }
 
@@ -93,14 +93,50 @@ class Pipeline_flow_model extends CI_Model
         }));
     }
 
+    public function verified_sources($row)
+    {
+        $ids=array();
+        if ($this->db->table_exists('PipelineFlowSource')) {
+            $ids=array_column($this->db->where('RequestID',$row['RequestID'])->get('PipelineFlowSource')->result_array(),'CaptureID');
+        }
+        if ($row['CaptureID']) $ids[]=$row['CaptureID'];
+        if (!$ids) return array();
+        return $this->db->where_in('CaptureID',array_unique($ids))->where('SpbbID',$row['SpbbID'])
+            ->order_by('CaptureID')->get('PipelineSppCapture')->result_array();
+    }
+
+    public function source_total($row)
+    {
+        $total='0.000';
+        foreach ($this->verified_sources($row) as $capture) $total=bcadd($total,(string)$capture['OrderedLiters'],3);
+        return $total;
+    }
+
+    public function source_remaining($row)
+    {
+        return bcsub((string)json_decode($row['Letter'],true)['PlannedLiters'],$this->source_total($row),3);
+    }
+
+    public function aggregate_source($row)
+    {
+        $captures=$this->verified_sources($row);
+        if (!$captures) return null;
+        $first=$captures[0];
+        foreach ($captures as $capture) if ($capture['Status']!=='CONFIRMED') return null;
+        $first['OrderedLiters']=$this->source_total($row);
+        return $first;
+    }
+
     public function source_requests()
     {
         $areas=$this->staff()?array_column($this->operations->billing->branches(),'SpbbID'):array();
         if (!$areas) return array();
         $rows=$this->db->select('RequestID,RequestNo,SpbbID,Letter,Status,CaptureID')
             ->where_in('SpbbID',$areas)->where_in('Status',array('SUBMITTED','WAIT_TRANSPORT','TRANSPORT_CONFIRMED'))
-            ->where('CaptureID IS NULL',null,false)->order_by('RequestID','DESC')->get('PipelineFlowRequest')->result_array();
-        return array_column(array_filter($rows,function($row){return (bool)$this->approved_bunker($row);}),null,'RequestID');
+            ->order_by('RequestID','DESC')->get('PipelineFlowRequest')->result_array();
+        return array_column(array_filter($rows,function($row){
+            return $this->approved_bunker($row) && bccomp($this->source_remaining($row),'0',3)>0;
+        }),null,'RequestID');
     }
 
     public function settings()
@@ -499,7 +535,7 @@ class Pipeline_flow_model extends CI_Model
     public function start_blockers($row,$files=null)
     {
         $blockers=$this->document_blockers($row,true,$files);
-        $capture=$row['CaptureID']?$this->db->select('SpbbID,Status,OrderedLiters')->where('CaptureID',(int)$row['CaptureID'])->where('SpbbID',(int)$row['SpbbID'])->get('PipelineSppCapture')->row_array():null;
+        $capture=$this->aggregate_source($row);
         $letter=json_decode($row['Letter'],true);
         if (!$capture || $capture['Status']!=='CONFIRMED' || (int)$capture['SpbbID']!==(int)$row['SpbbID']) {
             $blockers[]='SPP belum terverifikasi untuk cabang ini.';
@@ -574,6 +610,10 @@ class Pipeline_flow_model extends CI_Model
     {
         $rules=(array)json_decode($row['Requirements'],true);
         $rules['SupervisorState']='REVISE';
+        if ($this->db->table_exists('PipelineFlowSource')) {
+            $this->operations->audit('customer_flow',$row['RequestID'],'SRC_RETURN',array('Sources'=>$this->verified_sources($row)));
+            $this->db->where('RequestID',$row['RequestID'])->delete('PipelineFlowSource');
+        }
         $this->update($row,array('Status'=>'REVISION','CaptureID'=>null,'SourceKey'=>null,'SourceKind'=>null,
             'Requirements'=>$this->json($rules),'Note'=>$note)+$extra,'RETURN');
     }
@@ -632,6 +672,16 @@ class Pipeline_flow_model extends CI_Model
                     throw new RuntimeException('Pilih jenis dokumen dan konfirmasi kecocokan dengan pesanan.');
                 }
                 $capture=$this->operations->spp->capture((int)$this->text($input,'CaptureID',10));
+                if ($capture && in_array((int)$capture['CaptureID'],array_map('intval',array_column($this->verified_sources($row),'CaptureID')),true)) {
+                    throw new RuntimeException('Dokumen sudah dipakai di permohonan ini.');
+                }
+                if (!$capture || bccomp((string)$capture['OrderedLiters'],$this->source_remaining($row),3)>0) {
+                    throw new RuntimeException('Volume surat pengantar melebihi sisa permohonan '.$this->source_remaining($row).' L.');
+                }
+                $previous=$this->aggregate_source($row);
+                if ($previous && mb_strtoupper(trim($previous['ProductName']))!==mb_strtoupper(trim($capture['ProductName']))) {
+                    throw new RuntimeException('Produk surat pengantar harus sama dalam satu permohonan.');
+                }
                 $deliveryId=$input['LinkedDeliveryID']??'';
                 if(!is_string($deliveryId)||($deliveryId!==''&&!ctype_digit($deliveryId)))throw new RuntimeException('Pilihan DO tidak valid.');
                 $resolvedDelivery=(int)$deliveryId;
@@ -640,19 +690,24 @@ class Pipeline_flow_model extends CI_Model
                 $this->operations->audit('customer_flow',(int)$row['RequestID'],'SOURCE_ID',array(
                     'CaptureID'=>$capture['CaptureID'],'SPPIdentity'=>$capture['VehicleOrVessel'],
                     'VesselIdentity'=>$this->vessel_identity($row)));
+                $this->db->insert('PipelineFlowSource',array('RequestID'=>$row['RequestID'],'CaptureID'=>$capture['CaptureID'],
+                    'SourceKey'=>$source,'VerifiedBy'=>$this->actor()));
+                $this->db->where('CaptureID',$capture['CaptureID'])->update('PipelineSppCapture',array('ProposedRequestID'=>$row['RequestID']));
                 $linkedDelivery=$deliveryId!==''?$this->operations->billing->delivery((int)$deliveryId):null;
-                $this->update($row,array('Status'=>'TRANSPORT_CONFIRMED','CaptureID'=>$capture['CaptureID'],
-                    'SourceKey'=>$source,'SourceKind'=>$kind,'DeliveryID'=>$deliveryId!==''?(int)$deliveryId:null,
-                    'TotalizerStart'=>$linkedDelivery['TotalizerStart']??null),'SOURCE_OK');
+                $this->update($row,array('Status'=>'TRANSPORT_CONFIRMED','CaptureID'=>$row['CaptureID']?:$capture['CaptureID'],
+                    'SourceKey'=>$row['SourceKey']?:$source,'SourceKind'=>$row['SourceKind']?:$kind,
+                    'DeliveryID'=>$row['DeliveryID']?:($deliveryId!==''?(int)$deliveryId:null),
+                    'TotalizerStart'=>$row['TotalizerStart']??($linkedDelivery['TotalizerStart']??null)),'SOURCE_OK');
                 return;
             }
             if ($action==='start_filling' && $status==='TRANSPORT_CONFIRMED' && $row['CaptureID']) {
                 $blockers=$this->start_blockers($row);
                 if ($blockers) throw new RuntimeException(implode(' ',$blockers));
-                $capture=$this->operations->spp->capture($row['CaptureID']);
+                $capture=$this->aggregate_source($row);
                 $started=(new DateTimeImmutable('now',new DateTimeZone('Asia/Makassar')))->format('Y-m-d H:i:s');
                 $progress=array('BranchWorkflow'=>'ACTIVE','StartedBy'=>$this->actor(),'StartedName'=>$this->session->userdata('MIS_LOGGED_NAME'),
-                    'StartedAt'=>$started,'OrderedLiters'=>(string)$capture['OrderedLiters']);
+                    'StartedAt'=>$started,'OrderedLiters'=>(string)$capture['OrderedLiters'],
+                    'SourceDocuments'=>array_map(function($source){return array_intersect_key($source,array_flip(array('CaptureID','LONumber','ShipmentNo','OrderedLiters','FileHash')));},$this->verified_sources($row)));
                 $this->update($row,array('Status'=>'FILLING','BA'=>$this->json($progress)),'FILL_START');
                 return;
             }
@@ -711,7 +766,7 @@ class Pipeline_flow_model extends CI_Model
     private function finish_branch_filling($row, $input)
     {
         $actual = $this->branch_volume($input, 'VolumeLiters');
-        $capture = $this->operations->spp->capture($row['CaptureID']);
+        $capture=$this->aggregate_source($row);
         if (!$capture || $capture['Status']!=='CONFIRMED' || bccomp($actual, (string)$capture['OrderedLiters'], 3)>0) {
             throw new RuntimeException('Volume aktual melebihi SPP atau SPP belum terkonfirmasi.');
         }
@@ -770,6 +825,8 @@ class Pipeline_flow_model extends CI_Model
 
     public function captures($row)
     {
+        $used=array_column($this->verified_sources($row),'CaptureID');
+        if ($used) $this->db->where_not_in('S.CaptureID',$used);
         return $this->db->select('S.CaptureID,S.SpbbID,S.VehicleOrVessel,S.OriginalName,S.LONumber,S.ShipmentNo,S.DeliveryDate,S.OrderedLiters,S.Buyer,S.ProductName,S.FileHash')
             ->from('PipelineSppCapture S')->join('PipelineFlowRequest R','R.CaptureID=S.CaptureID','left')
             ->where('R.RequestID IS NULL',null,false)
@@ -778,7 +835,8 @@ class Pipeline_flow_model extends CI_Model
 
     public function awaiting_source($row)
     {
-        return $row['Status']==='WAIT_TRANSPORT' || ($row['Status']==='TRANSPORT_CONFIRMED' && !$row['CaptureID']);
+        return in_array($row['Status'],array('WAIT_TRANSPORT','TRANSPORT_CONFIRMED'),true)
+            && bccomp($this->source_remaining($row),'0',3)>0;
     }
 
     public function source_conflicts($capture)
@@ -908,7 +966,7 @@ class Pipeline_flow_model extends CI_Model
     {
         $this->load->library('Pipeline_finance');
         list($start,$end)=$this->pipeline_finance->totalizers($this->text($input,'TotalizerStart',30),$this->text($input,'TotalizerEnd',30));
-        $capture=$this->operations->spp->capture($row['CaptureID']);
+        $capture=$this->aggregate_source($row);
         if(!$capture || round($end-$start,3)>(float)$capture['OrderedLiters'])throw new RuntimeException('Selisih totalizer melebihi volume SPP. Periksa angka awal dan akhir.');
         if($row['DeliveryID']){
             $delivery=$this->operations->billing->delivery($row['DeliveryID']);
@@ -924,7 +982,7 @@ class Pipeline_flow_model extends CI_Model
             $row=$this->find($id);
             if (!$row || !$this->staff() || $row['Status']!=='FILLED' || $this->filling_progress($row)) throw new RuntimeException('Simpan totalizer akhir untuk menyelesaikan pengisian terlebih dahulu.');
             $this->ready_for_transport($row,true);
-            $capture=$this->operations->spp->capture((int)$row['CaptureID']);
+            $capture=$this->aggregate_source($row);
             if (!$capture || $capture['Status']!=='CONFIRMED') throw new RuntimeException('Dokumen sumber terverifikasi tidak tersedia.');
             $source=$row['SourceKey'];
             $letter = json_decode($row['Letter'],true);

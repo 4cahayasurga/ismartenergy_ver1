@@ -29,7 +29,7 @@
         <?= (int)$cost['pending'] ?> DO belum lolos validasi dokumen. 
         <?= (int)$cost['missing_rates'] ?> DO belum memiliki tarif dan belum masuk estimasi. Nilai final tersimpan saat invoice diterbitkan.</p>
 
-        <a class="btn btn-default" href="<?= site_url('Pipeline_billing/documents').'?'.html_escape(http_build_query(array('start'=>$start,'end'=>$end))) ?>">Dokumen DO / SPP / LO</a>
+        <a class="btn btn-default" href="<?= site_url('Pipeline_billing/documents').'?'.html_escape(http_build_query(array('start'=>$start,'end'=>$end))) ?>">Dokumen Surat Pengantar Pengiriman</a>
 
         <?php if($this->pipeline_access->allowed('invoices')): ?>
             <a class="btn btn-success" href="<?= site_url('Pipeline_billing/invoices') ?>">Create Invoice</a>

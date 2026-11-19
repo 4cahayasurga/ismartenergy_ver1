@@ -1,5 +1,5 @@
 <?php $confirmed=$capture['Status']==='CONFIRMED'; $warnings=json_decode((string)$capture['OcrWarningsJson'],true)?:array(); ?>
-<div class="content-wrapper"><section class="content-header"><h1>Hasil Pembacaan SPP #<?= (int)$capture['CaptureID'] ?></h1></section><section class="content">
+<div class="content-wrapper"><section class="content-header"><h1>Hasil Pembacaan Surat Pengantar Pengiriman #<?= (int)$capture['CaptureID'] ?></h1></section><section class="content">
 <?php $this->load->view('pipeline/billing_notice'); ?>
 <?php if(!empty($workflow)): ?><p>Permohonan Bunkering <a href="<?= site_url('Pipeline_flow/detail/'.(int)$workflow['RequestID'].'?spp='.(int)$capture['CaptureID']) ?>"><?= html_escape($workflow['RequestNo']) ?></a></p><?php endif; ?>
 <div class="alert alert-<?= $confirmed?'success':'info' ?>"><?= $confirmed?'Hasil SPP sudah disimpan dan dikonfirmasi.':'Cocokkan semua hasil bacaan dengan foto. OCR dapat tertukar antara huruf dan angka (contoh B/8, O/0, S/5). Field kosong tidak diisi dengan tebakan.' ?></div>
@@ -19,7 +19,7 @@
 <a class="btn btn-default" href="<?= site_url('Pipeline_spp') ?>">Daftar SPP</a> <?php if($confirmed&&empty($capture['DeliveryID'])&&empty($capture['ProposedRequestID'])): ?><a class="btn btn-primary" href="<?= site_url('Pipanisasi/delivery').'?spp='.(int)$capture['CaptureID'] ?>">Buat / Upload DO Pipanisasi dari SPP ini</a><?php endif; ?>
 </form></div></div></div></div>
 <?php if(false): ?>
-<div class="box box-primary"><div class="box-header"><h3 class="box-title">Lampirkan SPP Tersimpan ke DO</h3></div><div class="box-body">
+<div class="box box-primary"><div class="box-header"><h3 class="box-title">Lampirkan Surat Pengantar Pengiriman Tersimpan ke DO</h3></div><div class="box-body">
 <form method="post"><?php $this->load->view('pipeline/billing_token'); ?><input type="hidden" name="DeliveryID" value=""><input type="hidden" name="action" value="attach"><div class="form-group"><label>DO pada cabang yang sama</label><select name="DisabledDeliveryID" disabled required class="form-control"><option value="">Pilih DO</option><?php foreach($deliveries as $delivery): if((int)$delivery['SpbbID']!==(int)$capture['SpbbID'])continue; ?><option value="<?= (int)$delivery['DeliveryID'] ?>"><?= html_escape($delivery['DONumber'].' — '.$delivery['VesselName'].' — '.$delivery['Quantity'].' liter') ?></option><?php endforeach; ?></select><small>Pastikan kapal penerima dan volume sesuai SPP. Data hasil konfirmasi tetap dipertahankan.</small></div><button class="btn btn-primary">Lampirkan ke DO</button></form>
 </div></div>
 <?php endif; ?>

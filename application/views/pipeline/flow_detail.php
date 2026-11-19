@@ -33,6 +33,13 @@ Perusahaan Customer saat ini <strong><?= html_escape($currentCompany['CompanyNam
 <?php if ($staff && $row['Status']==='COMPLETED' && $stockDate && $this->pipeline_access->allowed('dashboard')): ?>
 <p><a class="btn btn-default" href="<?= site_url('Pipanisasi').'?'.http_build_query(array('area'=>(int)$row['SpbbID'],'start'=>$stockDate,'end'=>$stockDate)) ?>">Lihat Stock Movement pada Tanggal Pengisian</a></p>
 <?php endif; ?>
+<?php $sources=$this->flow->verified_sources($row); ?>
+<?php if ($sources): ?>
+<div class="box box-primary"><div class="box-header"><h3 class="box-title">Surat Pengantar Pengiriman Terverifikasi</h3></div><div class="box-body">
+<p>Permohonan <?= number_format($letter['PlannedLiters'],3,',','.') ?> L · Total dokumen <?= number_format($this->flow->source_total($row),3,',','.') ?> L · Sisa <?= number_format($this->flow->source_remaining($row),3,',','.') ?> L</p>
+<ul><?php foreach ($sources as $source): ?><li><a href="<?= site_url('Pipeline_spp/review/'.(int)$source['CaptureID']) ?>"><?= html_escape($source['OriginalName']) ?></a> · <?= number_format($source['OrderedLiters'],3,',','.') ?> L</li><?php endforeach; ?></ul>
+</div></div>
+<?php endif; ?>
 <?php $this->load->view('pipeline/partner_assignment',array('assignment_kind'=>'ORDER','assignment_id'=>$id)); ?>
 <div class="box box-primary"><div class="box-header"><h3 class="box-title">Dokumen Pendukung</h3></div><div class="box-body">
 <div class="alert alert-info">Setiap file disimpan terpisah. File yang sudah tersimpan tidak dihapus saat pengajuan belum lulus. Cukup lengkapi atau ganti dokumen yang ditandai perlu diperbaiki.</div>
@@ -68,14 +75,14 @@ for ($level=2;$level<=min(5,count($supervisors));$level++): ?>
 <div class="box box-warning"><div class="box-header"><h3 class="box-title">Review Admin Cabang</h3></div><div class="box-body">
 <form action="<?= $actionUrl ?>" method="post"><?php $this->load->view('pipeline/billing_token'); ?>
 <div class="form-group"><label for="flow-note">Catatan pemeriksaan dokumen</label><textarea id="flow-note" class="form-control" name="Note" maxlength="1000"></textarea></div>
-<?php if ($row['Status']==='SUBMITTED'): ?><button class="btn btn-primary" name="action" value="check_documents">Dokumen Lengkap. Lanjut Verifikasi SPP / DO</button><?php endif; ?>
+<?php if ($row['Status']==='SUBMITTED'): ?><button class="btn btn-primary" name="action" value="check_documents">Dokumen Lengkap. Lanjut Verifikasi Surat Pengantar Pengiriman</button><?php endif; ?>
 <button class="btn btn-warning" name="action" value="revise">Kembalikan untuk Perbaikan</button></form></div></div>
 <?php endif; ?>
 <?php if ($staff && $this->flow->awaiting_source($row)): ?>
-<div class="box box-success"><div class="box-header"><h3 class="box-title">Verifikasi SPP / DO terhadap Pesanan</h3></div><div class="box-body">
-<p id="verifikasi-sumber">Tanggal rencana pengisian <strong><?= html_escape($letter['FillingDate']) ?></strong>. Volume SPP / DO paling banyak <?= number_format($letter['PlannedLiters'],3,',','.') ?> L.</p>
+<div class="box box-success"><div class="box-header"><h3 class="box-title">Verifikasi Surat Pengantar Pengiriman terhadap Pesanan</h3></div><div class="box-body">
+<p id="verifikasi-sumber">Tanggal rencana pengisian <strong><?= html_escape($letter['FillingDate']) ?></strong>. Volume Surat Pengantar Pengiriman paling banyak <?= number_format($letter['PlannedLiters'],3,',','.') ?> L.</p>
 <p>Unggah dokumen dari pihak Bunkering. Periksa nama kapal, perusahaan pembeli, tanggal, produk, volume dan nomor referensi sebelum menyimpan hasil bacaan. Untuk DO, isi nomor DO pada kolom Nomor LO jika nomor LO tidak tercantum.</p>
-<p><a class="btn btn-default" href="<?= site_url('Pipeline_spp').'?area='.(int)$row['SpbbID'].'&request='.$id ?>">Unggah SPP / DO</a></p>
+<p><a class="btn btn-default" href="<?= site_url('Pipeline_spp').'?area='.(int)$row['SpbbID'].'&request='.$id ?>">Unggah Surat Pengantar Pengiriman</a></p>
 <?php if ($captures): ?>
 <form action="<?= $actionUrl ?>" method="post"><?php $this->load->view('pipeline/billing_token'); ?>
 <div class="form-group"><label for="flow-source-kind">Jenis dokumen</label><select id="flow-source-kind" name="SourceKind" class="form-control" required><option value="">Pilih jenis</option><option value="SPP" <?= ($sourceKind??null)==='SPP'?'selected':'' ?>>SPP</option><option value="DO" <?= ($sourceKind??null)==='DO'?'selected':'' ?>>DO</option></select></div>
@@ -83,7 +90,7 @@ for ($level=2;$level<=min(5,count($supervisors));$level++): ?>
 <?php foreach ($captures as $capture): ?><option data-identity="<?= html_escape($capture['VehicleOrVessel']) ?>" value="<?= (int)$capture['CaptureID'] ?>" <?= (int)($prefilled['CaptureID']??0)===(int)$capture['CaptureID']?'selected':'' ?>><?= html_escape(($capture['LONumber']?:$capture['ShipmentNo']).' / '.$capture['OriginalName'].' / '.$capture['DeliveryDate'].' / '.$capture['OrderedLiters'].' L') ?></option><?php endforeach; ?>
 </select></div>
 <?php if ($sourceMismatches): ?>
-<div class="alert alert-warning"><strong>SPP pilihan belum sesuai dengan permohonan</strong><ul>
+<div class="alert alert-warning"><strong>Surat Pengantar Pengiriman pilihan belum sesuai dengan permohonan</strong><ul>
 <?php foreach ($sourceMismatches as $mismatch): ?><li><?= html_escape($mismatch) ?></li><?php endforeach; ?>
 </ul><a href="<?= site_url('Pipeline_spp/review/'.(int)$prefilled['CaptureID']) ?>">Periksa hasil bacaan SPP</a> atau pilih SPP yang sesuai.</div>
 <?php endif; ?>
@@ -106,7 +113,7 @@ for ($level=2;$level<=min(5,count($supervisors));$level++): ?>
 <p>Nomor registrasi / IMO kapal dari data Customer <strong><?= html_escape($vesselIdentity['RegistrationNo']) ?></strong></p>
 <?php endif; ?>
 <label><input type="checkbox" name="ConfirmSource" value="1" required> Saya sudah memeriksa dokumen asli dan mencocokkan pembeli, tanggal, dan volume dengan permohonan ini.</label>
-<div><button class="btn btn-success" name="action" value="verify_source">Verifikasi SPP / DO</button></div></form>
+<div><button class="btn btn-success" name="action" value="verify_source">Verifikasi Surat Pengantar Pengiriman</button></div></form>
 <?php endif; ?></div></div>
 <?php endif; ?>
 <?php if ($staff && $row['Status']==='TRANSPORT_CONFIRMED' && $verifiedCapture && !$blockers): ?>

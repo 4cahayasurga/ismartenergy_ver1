@@ -56,7 +56,7 @@ class Pipeline_spp extends CI_Controller
             try {
                 $branch=$this->input->post('SpbbID'); $deliveryId=$this->input->post('DeliveryID');if($deliveryId!==null&&$deliveryId!=='')throw new InvalidArgumentException('Tautan SPP ke DO sementara dinonaktifkan. Gunakan alur BASTB / RDT.');$deliveryId='';
                 if (!is_string($branch) || !ctype_digit($branch) || !is_string($deliveryId) || ($deliveryId!=='' && !ctype_digit($deliveryId))) throw new InvalidArgumentException('Cabang / DO tidak valid.');
-                if ($workflow && (int)$workflow['SpbbID']!==(int)$branch) throw new RuntimeException('Cabang SPP harus sama dengan pesanan.');
+                if ($workflow && (int)$workflow['SpbbID']!==(int)$branch) throw new RuntimeException('Cabang Surat Pengantar Pengiriman harus sama dengan pesanan.');
                 if (!$this->billing->branch_allowed((int)$branch)) throw new RuntimeException('Cabang di luar akses Anda.');
                 $file=null;
                 foreach(array('SPPFile','PhotoFile') as $key) if (isset($_FILES[$key]) && $_FILES[$key]['error']!==UPLOAD_ERR_NO_FILE) {
@@ -79,7 +79,7 @@ class Pipeline_spp extends CI_Controller
                 if($savedCapture['StoredName']!==$name){
                     unlink($path);
                     $path=null;
-                    $this->session->set_flashdata('Berhasil','SPP ini sudah tersimpan. Arsip dan hasil OCR yang ada dibuka kembali.');
+                    $this->session->set_flashdata('Berhasil','Surat Pengantar Pengiriman ini sudah tersimpan. Arsip dan hasil OCR yang ada dibuka kembali.');
                     redirect($workflow && $savedCapture['Status']==='CONFIRMED'
                         ?'Pipeline_flow/detail/'.$workflow['RequestID'].'?spp='.$id
                         :'Pipeline_spp/review/'.$id.($workflow?'?request='.$workflow['RequestID']:''));
@@ -93,7 +93,7 @@ class Pipeline_spp extends CI_Controller
                 redirect('Pipeline_spp/review/'.$id.($workflow?'?request='.$workflow['RequestID']:'')); return;
             } catch(Exception $e) { if ($path && is_file($path)) unlink($path); $error=$e->getMessage(); }
         }
-        $this->render('spp_upload',array('judul'=>'Upload / Foto SPP','error'=>$error,'branches'=>$this->billing->branches(),
+        $this->render('spp_upload',array('judul'=>'Upload / Foto Surat Pengantar Pengiriman','error'=>$error,'branches'=>$this->billing->branches(),
             'deliveries'=>array(),'captures'=>$this->spp->captures(),'workflow'=>$workflow,'requests'=>$requests));
     }
     public function review($id)
@@ -119,12 +119,12 @@ class Pipeline_spp extends CI_Controller
                     $this->session->set_flashdata('Berhasil','Foto SPP dilampirkan ke DO. Lanjutkan View / Periksa dokumen sebelum penagihan.');
                     redirect('Pipeline_spp/review/'.$id); return;
                 }
-                if ($capture['Status']==='CONFIRMED') throw new RuntimeException('SPP sudah dikonfirmasi. Unggah foto baru untuk revisi.');
+                if ($capture['Status']==='CONFIRMED') throw new RuntimeException('Surat Pengantar Pengiriman sudah dikonfirmasi. Unggah foto baru untuk revisi.');
                 if ($this->input->post('action')==='retry') {
                     $this->recognize($capture); redirect('Pipeline_spp/review/'.$id.($workflow?'?request='.$workflow['RequestID']:'')); return;
                 }
                 if ($this->input->post('Confirmed')!=='1') throw new InvalidArgumentException('Centang konfirmasi setelah memeriksa foto dan seluruh hasil bacaan.');
-                if ($workflow && (!in_array($workflow['Status'],array('SUBMITTED','WAIT_TRANSPORT','TRANSPORT_CONFIRMED'),true) || $workflow['CaptureID'])) {
+                if ($workflow && (!in_array($workflow['Status'],array('SUBMITTED','WAIT_TRANSPORT','TRANSPORT_CONFIRMED'),true) || bccomp($this->flow->source_remaining($workflow),'0',3)<=0)) {
                     throw new RuntimeException('Pesanan sudah melanjutkan proses pengisian.');
                 }
                 $posted=$this->input->post();
@@ -134,11 +134,11 @@ class Pipeline_spp extends CI_Controller
                 if (!is_string($deliveryId) || ($deliveryId!=='' && !ctype_digit($deliveryId))) throw new InvalidArgumentException('DO tidak valid.');
                 $this->spp->confirm((int)$id,$fields,$deliveryId!==''?(int)$deliveryId:null);
                 if ($workflow) { redirect('Pipeline_flow/detail/'.$workflow['RequestID'].'?spp='.(int)$id); return; }
-                $this->session->set_flashdata('Berhasil','Hasil SPP tersimpan.'.($deliveryId!==''?' File juga dilampirkan ke DO; lanjutkan View / Periksa dokumen sebelum penagihan.':''));
+                $this->session->set_flashdata('Berhasil','Hasil Surat Pengantar Pengiriman tersimpan.'.($deliveryId!==''?' File juga dilampirkan ke DO; lanjutkan View / Periksa dokumen sebelum penagihan.':''));
                 redirect('Pipeline_spp/review/'.$id); return;
             } catch(Exception $e) { $error=$e->getMessage(); }
         }
-        $this->render('spp_review',array('judul'=>'Hasil Pembacaan SPP','capture'=>$capture,'form'=>$form,'error'=>$error,
+        $this->render('spp_review',array('judul'=>'Hasil Pembacaan Surat Pengantar Pengiriman','capture'=>$capture,'form'=>$form,'error'=>$error,
             'fields'=>$this->pipeline_spp_ocr->fields(),'deliveries'=>array(),'workflow'=>$workflow));
     }
     public function file($id)
